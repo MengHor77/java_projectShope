@@ -207,7 +207,7 @@ private void handleLogout() {
     }
 
     public static void main(String[] args) {
-        //new SignUpUser();
-       new  Mart();
+        new SignUpUser();
+       
     }
 }
