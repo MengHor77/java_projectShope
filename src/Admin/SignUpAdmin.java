@@ -15,7 +15,7 @@ import java.security.NoSuchAlgorithmException;
 
 // Utility class for password hashing
 class PasswordUtils {
-    
+
     // Hashes the password using SHA-256
     public static String hashPassword(String password) {
         try {
@@ -54,18 +54,19 @@ public class SignUpAdmin extends JFrame implements ActionListener {
 
     // Constructor
     public SignUpAdmin() {
-       
+
         // Initialize database connection
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             cn = DriverManager.getConnection(URL, USER, PASSWORD);
 
             // Create table if it does not exist, with a primary key
-            String createTableSQL = "CREATE TABLE IF NOT EXISTS admin (" +
-                                    "id INT AUTO_INCREMENT PRIMARY KEY, " +
-                                    "userName_sign VARCHAR(255), " +
-                                    "email_sign VARCHAR(255), " +
-                                    "password_sign VARCHAR(255))";
+            String createTableSQL = "CREATE TABLE IF NOT EXISTS admin ("
+                    + "id INT AUTO_INCREMENT PRIMARY KEY, "
+                    + "userName_sign VARCHAR(255), "
+                    + "email_sign VARCHAR(255), "
+                    + "password_sign VARCHAR(255),"
+                    + "date_create TIMESTAMP DEFAULT CURRENT_TIMESTAMP)";
 
             try (PreparedStatement pstmt = cn.prepareStatement(createTableSQL)) {
                 pstmt.executeUpdate();
@@ -78,7 +79,7 @@ public class SignUpAdmin extends JFrame implements ActionListener {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null, "Failed to connect to the database!", "Error", JOptionPane.ERROR_MESSAGE);
         }
-   
+
         // Set up the JFrame
         setTitle("Sign Upfor admin");
         setSize(330, 250); // Increased size for additional fields
@@ -101,7 +102,7 @@ public class SignUpAdmin extends JFrame implements ActionListener {
         mouseCursorPointerJCheckBox(jCheckBoxShowPassword);
         jButtonExit = new JButton("Exit");
         mouseCursorPointer(jButtonExit);
-        
+
         // Set button backgrounds
         jButtonExit.setBackground(Color.cyan);
         jButtonSign_in.setBackground(Color.cyan);
@@ -190,10 +191,10 @@ public class SignUpAdmin extends JFrame implements ActionListener {
         String confirmPassword = new String(jTextFieldConfirmPassword.getPassword());
 
         // Check if any of the fields are empty
-        if (jTextFieldUsername.getText().isEmpty() ||
-            password.isEmpty() ||
-            confirmPassword.isEmpty() ||
-            jTextFieldEmail.getText().isEmpty()) {
+        if (jTextFieldUsername.getText().isEmpty()
+                || password.isEmpty()
+                || confirmPassword.isEmpty()
+                || jTextFieldEmail.getText().isEmpty()) {
 
             // Show a message indicating that all fields are required
             JOptionPane.showMessageDialog(null, "All fields are required", "Error", JOptionPane.ERROR_MESSAGE);
@@ -229,10 +230,10 @@ public class SignUpAdmin extends JFrame implements ActionListener {
     // Validate password strength
     private boolean isPasswordValid(String password) {
         // Password should be at least 8 characters long, contain upper and lower case letters, and digits
-        return password.length() >= 8 &&
-               password.matches(".*[a-z].*") &&
-               password.matches(".*[A-Z].*") &&
-               password.matches(".*\\d.*");
+        return password.length() >= 8
+                && password.matches(".*[a-z].*")
+                && password.matches(".*[A-Z].*")
+                && password.matches(".*\\d.*");
     }
 
     @Override
