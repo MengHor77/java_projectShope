@@ -283,25 +283,29 @@ public class UiSaleHomePage extends JPanel {
         ButtonGroup buttonGroup = new ButtonGroup();
         JPanel paymentOptionsPanel = new JPanel();
         paymentOptionsPanel.setLayout(new GridLayout(1, 2));
-        JRadioButton cardRadioButton = new JRadioButton("Card");
+        JRadioButton cashRadioButton = new JRadioButton("Cash");
         JRadioButton qrRadioButton = new JRadioButton("QR Code");
-        buttonGroup.add(cardRadioButton);
+        buttonGroup.add(cashRadioButton);
         buttonGroup.add(qrRadioButton);
-        paymentOptionsPanel.add(cardRadioButton);
+        paymentOptionsPanel.add(cashRadioButton);
         paymentOptionsPanel.add(qrRadioButton);
 
         JButton confirmButton = new JButton("Confirm Payment");
         confirmButton.setBackground(Color.cyan);
         mouseCursorPointer(confirmButton);
         confirmButton.addActionListener(e -> {
-            if (cardRadioButton.isSelected()) {
-                JOptionPane.showMessageDialog(null, "Card payment successful!");
+            if (cashRadioButton.isSelected()) {
+                JOptionPane.showMessageDialog(null, "Cash payment successful!");
+                 cartItems.clear();
+                 receiptFrame.dispose();
+                
             } else if (qrRadioButton.isSelected()) {
                 showQRCode();
+                receiptFrame.dispose();
             } else {
                 JOptionPane.showMessageDialog(null, "Please select a payment method.");
             }
-            receiptFrame.dispose();
+//            
         });
 
         receiptPanel.add(paymentOptionsPanel);
