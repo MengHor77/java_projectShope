@@ -1,6 +1,5 @@
 package User;
 
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -16,7 +15,7 @@ import java.security.NoSuchAlgorithmException;
 
 // Utility class for password hashing
 class PasswordUtils {
-    
+
     // Hashes the password using SHA-256
     public static String hashPassword(String password) {
         try {
@@ -44,7 +43,7 @@ public class SignUpUser extends JFrame implements ActionListener {
     private JPasswordField jTextFieldPassword;
     private JPasswordField jTextFieldConfirmPassword;
     private JButton jButtonSign_in;
-     private   JButton jButtonLogin ;
+    private JButton jButtonLogin;
     private JButton jButtonExit;
     private JCheckBox jCheckBoxShowPassword;
 
@@ -56,18 +55,19 @@ public class SignUpUser extends JFrame implements ActionListener {
 
     // Constructor
     public SignUpUser() {
-       
+
         // Initialize database connection
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             cn = DriverManager.getConnection(URL, USER, PASSWORD);
 
             // Create table if it does not exist, with a primary key
-            String createTableSQL = "CREATE TABLE IF NOT EXISTS user (" +
-                                    "id INT AUTO_INCREMENT PRIMARY KEY, " +
-                                    "userName_sign VARCHAR(255), " +
-                                    "email_sign VARCHAR(255), " +
-                                    "password_sign VARCHAR(255))";
+            String createTableSQL = "CREATE TABLE IF NOT EXISTS user ("
+                    + "id INT AUTO_INCREMENT PRIMARY KEY, "
+                    + "userName_sign VARCHAR(255), "
+                    + "email_sign VARCHAR(255), "
+                    + "password_sign VARCHAR(255),"
+                    + "date_create TIMESTAMP DEFAULT CURRENT_TIMESTAMP)";
 
             try (PreparedStatement pstmt = cn.prepareStatement(createTableSQL)) {
                 pstmt.executeUpdate();
@@ -80,7 +80,7 @@ public class SignUpUser extends JFrame implements ActionListener {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null, "Failed to connect to the database!", "Error", JOptionPane.ERROR_MESSAGE);
         }
-   
+
         // Set up the JFrame
         setTitle("Sign Up for user ");
         setSize(330, 250); // Increased size for additional fields
@@ -95,7 +95,7 @@ public class SignUpUser extends JFrame implements ActionListener {
         JLabel jLabelConfirmPassword = new JLabel("Confirm Password");
         jButtonSign_in = new JButton("Sign Up");
         jButtonLogin = new JButton("log in");
-       mouseCursorPointer(jButtonLogin);
+        mouseCursorPointer(jButtonLogin);
 
         mouseCursorPointer(jButtonSign_in);
         jTextFieldUsername = new JTextField(20);
@@ -106,12 +106,11 @@ public class SignUpUser extends JFrame implements ActionListener {
         mouseCursorPointerJCheckBox(jCheckBoxShowPassword);
         jButtonExit = new JButton("Exit");
         mouseCursorPointer(jButtonExit);
-        
+
         // Set button backgrounds
         jButtonExit.setBackground(Color.cyan);
         jButtonSign_in.setBackground(Color.cyan);
         jButtonLogin.setBackground(Color.cyan);
-
 
         // Add components to panel
         jPanel.add(jLabelUsername);
@@ -124,7 +123,7 @@ public class SignUpUser extends JFrame implements ActionListener {
         jPanel.add(jTextFieldConfirmPassword);
         jPanel.add(jCheckBoxShowPassword);
         jPanel.add(jButtonSign_in);
-        jPanel.add(  jButtonLogin);
+        jPanel.add(jButtonLogin);
 
         jPanel.add(jButtonExit);
 
@@ -145,9 +144,8 @@ public class SignUpUser extends JFrame implements ActionListener {
         jTextFieldConfirmPassword.setBounds(130, 100, 160, 25);
         jCheckBoxShowPassword.setBounds(130, 130, 160, 25);
         jButtonSign_in.setBounds(130, 170, 80, 25);
-       jButtonLogin.setBounds(220, 170, 80, 25);
+        jButtonLogin.setBounds(220, 170, 80, 25);
 
-        
         jButtonExit.setBounds(10, 170, 70, 25);
 
         // Add action listeners for the buttons
@@ -203,10 +201,10 @@ public class SignUpUser extends JFrame implements ActionListener {
         String confirmPassword = new String(jTextFieldConfirmPassword.getPassword());
 
         // Check if any of the fields are empty
-        if (jTextFieldUsername.getText().isEmpty() ||
-            password.isEmpty() ||
-            confirmPassword.isEmpty() ||
-            jTextFieldEmail.getText().isEmpty()) {
+        if (jTextFieldUsername.getText().isEmpty()
+                || password.isEmpty()
+                || confirmPassword.isEmpty()
+                || jTextFieldEmail.getText().isEmpty()) {
 
             // Show a message indicating that all fields are required
             JOptionPane.showMessageDialog(null, "All fields are required", "Error", JOptionPane.ERROR_MESSAGE);
@@ -231,7 +229,7 @@ public class SignUpUser extends JFrame implements ActionListener {
                 if (rowsInserted > 0) {
                     JOptionPane.showMessageDialog(null, "You are signed up successfully");
                     dispose();  // Dispose of the current window
-               new LogInUser();
+                    new LogInUser();
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -243,10 +241,10 @@ public class SignUpUser extends JFrame implements ActionListener {
     // Validate password strength
     private boolean isPasswordValid(String password) {
         // Password should be at least 8 characters long, contain upper and lower case letters, and digits
-        return password.length() >= 8 &&
-               password.matches(".*[a-z].*") &&
-               password.matches(".*[A-Z].*") &&
-               password.matches(".*\\d.*");
+        return password.length() >= 8
+                && password.matches(".*[a-z].*")
+                && password.matches(".*[A-Z].*")
+                && password.matches(".*\\d.*");
     }
 
     @Override
