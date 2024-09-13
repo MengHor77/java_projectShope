@@ -5,9 +5,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Ellipse2D;
 import javax.swing.*;
-
+import javax.swing.JOptionPane;
 import jv.HomePage;
-
 import Admin.LogInAdmin;
 import User.SignUpUser;
 
@@ -25,28 +24,39 @@ public class Mart extends JFrame {
 
         Font boldFont = new Font("Arial", Font.BOLD, 18);
 
-        // Create and set up the menu panel with FlowLayout for left alignment
-        JPanel menuPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 10));
+        JPanel menuPanel = new JPanel(new BorderLayout());
         menuPanel.setPreferredSize(new Dimension(1500, 120));
         menuPanel.setBackground(Color.gray);
 
         // Add logo and spacing
         RoundImagePanel logoPanel = new RoundImagePanel("src/Images/logo/logo.jpg", 100, 100, 0, 0);
         logoPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 10));
-        JPanel spacingPanel = new JPanel();
-        spacingPanel.setPreferredSize(new Dimension(50, 0));
-        spacingPanel.setOpaque(false);
-        menuPanel.add(logoPanel);
-        menuPanel.add(spacingPanel);
+
+        // Create a sub-panel for the menu items to be centered
+        JPanel menuItemsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 10));
+        menuItemsPanel.setOpaque(false);
 
         // Add menu labels
         JLabel homeLabel = createMenuLabel("Home", boldFont);
         JLabel dailySaleLabel = createMenuLabel("Daily Sale", boldFont);
         JLabel adminLabel = createMenuLabel("Admin", boldFont);
 
-        menuPanel.add(homeLabel);
-        menuPanel.add(dailySaleLabel);
-        menuPanel.add(adminLabel);
+        menuItemsPanel.add(homeLabel);
+        menuItemsPanel.add(dailySaleLabel);
+        menuItemsPanel.add(adminLabel);
+
+        menuPanel.add(logoPanel, BorderLayout.WEST);
+        menuPanel.add(menuItemsPanel, BorderLayout.CENTER);
+
+        // Create a panel for the profile and align it to the right
+        JPanel profilePanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 50, 10)); // 30px from the right
+        profilePanel.setOpaque(false);
+        profilePanel.setBorder(BorderFactory.createEmptyBorder(50, 0, 0, 30)); // 80px from the top, 30px from the right
+
+        RoundImagePanel profileImagePanel = new RoundImagePanel("src/Images/profile/profile.png", 50, 30, 0, 0);
+        profilePanel.add(profileImagePanel);
+
+        menuPanel.add(profilePanel, BorderLayout.EAST);
 
         add(menuPanel, BorderLayout.NORTH);
 
@@ -65,7 +75,24 @@ public class Mart extends JFrame {
         JPanel dailySalePanel = createPagePanel("Daily Sale", null, boldFont);
         cardPanel.add(dailySalePanel, "Daily_sale");
 
-        // Add About page panel
+        
+        // Initialize profile menu (dropdown)
+      JPopupMenu  profileMenu = new JPopupMenu();
+        JMenuItem logoutMenuItem = new JMenuItem("Logout");
+        profileMenu.add(logoutMenuItem);
+
+        
+        profileImagePanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                profileMenu.show(profileImagePanel, 0, profileImagePanel.getHeight()); 
+            }
+        });
+
+        
+        logoutMenuItem.addActionListener(e -> handleLogout()); 
+
+      
 
         // Add action listeners to menu labels
         homeLabel.addMouseListener(createMenuMouseListener(() -> showPanel("Home_page"), homeLabel));
@@ -75,6 +102,22 @@ public class Mart extends JFrame {
         setLocationRelativeTo(null);
         setVisible(true);
     }
+
+private void handleLogout() {
+    // Show confirmation dialog
+    int response = JOptionPane.showConfirmDialog(this, 
+        "Are you sure you want to logout?", 
+        "Confirm Logout", 
+        JOptionPane.YES_NO_OPTION,
+        JOptionPane.QUESTION_MESSAGE);
+
+    if (response == JOptionPane.YES_OPTION) {
+        // User chose "Yes", proceed with logout
+        this.dispose();
+        new SignUpUser(); // Optionally open the SignUpUser frame
+    }
+    // If the user chose "No", do nothing
+}
 
     private JLabel createMenuLabel(String text, Font font) {
         JLabel label = new JLabel(text, JLabel.CENTER);
@@ -164,6 +207,7 @@ public class Mart extends JFrame {
     }
 
     public static void main(String[] args) {
-        new SignUpUser();
+        //new SignUpUser();
+       new  Mart();
     }
 }
