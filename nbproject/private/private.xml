@@ -3,14 +3,25 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
+<<<<<<< HEAD
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/jv/StockFood.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/jv/RouteStock.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/jv/StockHealthAndBeauty.java</file>
+=======
+            <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/jv/SelectedItem.java</file>
+            <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/jv/Product.java</file>
+            <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Components/Slide.java</file>
+>>>>>>> 448c668 (run in main call sign up class)
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Admin/LogInAdmin.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/jv/HomePage.java</file>
-            <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/jv/DragDrop.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/jv/ProductRenderer.java</file>
+<<<<<<< HEAD
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/jv/HealthAndBeautyPage.java</file>
+=======
+            <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Components/Category.java</file>
+            <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Components/DragDrop.java</file>
+            <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/User/SignUpUser.java</file>
+>>>>>>> 448c668 (run in main call sign up class)
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Admin/Mart.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/User/UiSaleHomePage.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/jv/DataSaleDrinkPage.java</file>
