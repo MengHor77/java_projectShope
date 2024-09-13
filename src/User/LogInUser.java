@@ -117,21 +117,6 @@ public class LogInUser extends JFrame implements ActionListener {
         // Make frame visible
         setVisible(true);
     }
-private void createTable() {
-    String createTableSQL = "CREATE TABLE IF NOT EXISTS user1 ("
-            + "id INT AUTO_INCREMENT PRIMARY KEY, "
-            + "pro_name VARCHAR(255), "
-            + "pro_price DOUBLE NOT NULL, "
-            + "pro_qty INT NOT NULL, "
-            + "img VARCHAR(255), " // Store image path as VARCHAR
-            + "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)"; // Add current timestamp
-    try (PreparedStatement pstmt = cn.prepareStatement(createTableSQL)) {
-        pstmt.executeUpdate();
-    } catch (SQLException e) {
-        e.printStackTrace();
-        JOptionPane.showMessageDialog(this, "Error creating table.");
-    }
-}
 
 
 
@@ -187,54 +172,63 @@ private void createTable() {
     }
 
     // Function to handle login
-    private void login() {
-        String username = jTextFieldUsername.getText();
-        String email = jTextFieldEmail.getText();
-        String password = new String(jTextFieldPassword.getPassword());
-        String confirmPassword = new String(jTextFieldConfirmPassword.getPassword()); // New field
+ private void login() {
+    String username = jTextFieldUsername.getText();
+    String email = jTextFieldEmail.getText();
+    String password = new String(jTextFieldPassword.getPassword());
+    String confirmPassword = new String(jTextFieldConfirmPassword.getPassword()); // Confirm password field
 
-        if (username.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
-            JOptionPane.showMessageDialog(null, "All fields are required", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        // Check if passwords match
-        if (!password.equals(confirmPassword)) {
-            JOptionPane.showMessageDialog(null, "Passwords do not match", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        String sql = "SELECT * FROM user WHERE userName_sign = ? AND email_sign = ? AND password_sign = ?";
-        try (PreparedStatement ps = cn.prepareStatement(sql)) {
-            ps.setString(1, username);
-            ps.setString(2, email);
-            ps.setString(3, hashPassword(password)); // Hashing the entered password
-
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                JOptionPane.showMessageDialog(null, "You are Logged In successfully");
-                dispose();
-                createTable();
-
-                  Mart Mart = new Mart();
-
-            } else {
-                if (error < 2) {
-                    error += 1;
-                    JOptionPane.showMessageDialog(null, "Wrong account");
-                } else {
-                    jTextFieldPassword.setEnabled(false);
-                    jTextFieldConfirmPassword.setEnabled(false);
-                    jTextFieldUsername.setEnabled(false);
-                    jTextFieldEmail.setEnabled(false);
-                    JOptionPane.showMessageDialog(null, "Max attempts reached");
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(null, "Error connecting to database", "Error", JOptionPane.ERROR_MESSAGE);
-        }
+    // Check for empty fields
+    if (username.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+        JOptionPane.showMessageDialog(null, "All fields are required", "Error", JOptionPane.ERROR_MESSAGE);
+        return;
     }
+
+    // Check if passwords match
+    if (!password.equals(confirmPassword)) {
+        JOptionPane.showMessageDialog(null, "Passwords do not match", "Error", JOptionPane.ERROR_MESSAGE);
+        return;
+    }
+
+    // Prepare SQL query to check user credentials
+    String sql = "SELECT id FROM user WHERE userName_sign = ? AND email_sign = ? AND password_sign = ?";
+    try (PreparedStatement ps = cn.prepareStatement(sql)) {
+        ps.setString(1, username);
+        ps.setString(2, email);
+        ps.setString(3, hashPassword(password)); // Hashing the entered password
+
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()) {
+            int loggedInUserId = rs.getInt("id"); // Get the user ID from the result set
+
+            // Set the current user ID in the session manager
+            SessionManager.setCurrentUserId(loggedInUserId);
+
+            JOptionPane.showMessageDialog(null, "You are logged in successfully");
+            dispose(); // Close the login window
+
+            
+
+            // Open the main application window
+            Mart mart = new Mart();
+            mart.setVisible(true); // Ensure the Mart frame is visible
+        } else {
+            if (error < 2) {
+                error += 1;
+                JOptionPane.showMessageDialog(null, "Wrong account or password. Attempts left: " + (3 - error));
+            } else {
+                jTextFieldPassword.setEnabled(false);
+                jTextFieldConfirmPassword.setEnabled(false);
+                jTextFieldUsername.setEnabled(false);
+                jTextFieldEmail.setEnabled(false);
+                JOptionPane.showMessageDialog(null, "Max attempts reached. Account locked.");
+            }
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+        JOptionPane.showMessageDialog(null, "Error connecting to database", "Error", JOptionPane.ERROR_MESSAGE);
+    }
+}
 
     // Method to hash the password using SHA-256
     private String hashPassword(String password) {
