@@ -7,7 +7,7 @@ import java.awt.geom.Ellipse2D;
 import javax.swing.*;
 
 import jv.HomePage;
-import jv.AboutPage;
+
 import Admin.LogInAdmin;
 import User.SignUpUser;
 
@@ -66,8 +66,6 @@ public class Mart extends JFrame {
         cardPanel.add(dailySalePanel, "Daily_sale");
 
         // Add About page panel
-        JPanel aboutPanel = createPagePanel("About Page", new AboutPage(), boldFont);
-        cardPanel.add(aboutPanel, "About_page");
 
         // Add action listeners to menu labels
         homeLabel.addMouseListener(createMenuMouseListener(() -> showPanel("Home_page"), homeLabel));
