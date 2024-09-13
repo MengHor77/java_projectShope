@@ -17,15 +17,7 @@ public class HomePage extends JPanel {
 
      
 
-        // Slide Panel
-//        JPanel jp2 = new JPanel(new BorderLayout());
-//        jp2.setBackground(Color.BLUE);
-//        jp2.setPreferredSize(new Dimension(1500, 800));
-
-//        // Add Slide component to jp2
-//        Slide slide = new Slide();
-//        jp2.add(slide, BorderLayout.CENTER);
-
+ 
         // UISale Panel
         JPanel jp3 = new JPanel(new BorderLayout());
         jp3.setPreferredSize(new Dimension(1500, 1800));
