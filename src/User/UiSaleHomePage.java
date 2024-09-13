@@ -17,6 +17,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import javax.imageio.ImageIO;
@@ -41,9 +42,11 @@ public class UiSaleHomePage extends JPanel {
 
     private JFrame cartFrame;
     private JPanel main;
+    private Connection cn;
     private List<Product> cartItems;
 
     public UiSaleHomePage() {
+        createTable();
         cartItems = new ArrayList<>();
 
         main = new JPanel();
@@ -90,7 +93,9 @@ public class UiSaleHomePage extends JPanel {
     private void showCart() {
         if (cartItems.isEmpty()) {
             JOptionPane.showMessageDialog(null, "Cart is empty.");
-            if (cartFrame != null) cartFrame.dispose();
+            if (cartFrame != null) {
+                cartFrame.dispose();
+            }
             return;
         }
 
@@ -293,20 +298,29 @@ public class UiSaleHomePage extends JPanel {
         JButton confirmButton = new JButton("Confirm Payment");
         confirmButton.setBackground(Color.cyan);
         mouseCursorPointer(confirmButton);
-        confirmButton.addActionListener(e -> {
-            if (cashRadioButton.isSelected()) {
-                JOptionPane.showMessageDialog(null, "Cash payment successful!");
-                 cartItems.clear();
-                 receiptFrame.dispose();
-                
-            } else if (qrRadioButton.isSelected()) {
-                showQRCode();
-                receiptFrame.dispose();
-            } else {
-                JOptionPane.showMessageDialog(null, "Please select a payment method.");
-            }
-//            
-        });
+
+      confirmButton.addActionListener(e -> {
+    if (cashRadioButton.isSelected() || qrRadioButton.isSelected()) {
+        // Process each item in the cart
+        for (Product item : cartItems) {
+            double total = item.getQty() * item.getPrice();
+            insertProductSale(item.getName(), item.getPrice(), item.getQty(), total);
+        }
+
+        if (cashRadioButton.isSelected()) {
+            JOptionPane.showMessageDialog(null, "Cash payment successful!");
+        } else {
+            showQRCode();
+            JOptionPane.showMessageDialog(null, "QR Code payment successful!");
+        }
+        
+        updateStockQuantities();
+        cartItems.clear();
+        receiptFrame.dispose();
+    } else {
+        JOptionPane.showMessageDialog(null, "Please select a payment method.");
+    }
+});
 
         receiptPanel.add(paymentOptionsPanel);
         receiptPanel.add(confirmButton);
@@ -315,117 +329,212 @@ public class UiSaleHomePage extends JPanel {
         receiptFrame.add(scrollPane);
         receiptFrame.setVisible(true);
     }
+    
+    private void insertProductSale(String productName, double productPrice, int productQuantity, double total) {
+    int userId = SessionManager.getCurrentUserId(); // Retrieve the current user's ID
 
- private List<Product> fetchProducts() {
-    List<Product> products = new ArrayList<>();
+    String insertSQL = "INSERT INTO product_sale (user_id, pro_name, pro_price, pro_quantity, total) VALUES (?, ?, ?, ?, ?)";
+    try (PreparedStatement ps = cn.prepareStatement(insertSQL)) {
+        ps.setInt(1, userId);
+        ps.setString(2, productName);
+        ps.setDouble(3, productPrice);
+        ps.setInt(4, productQuantity);
+        ps.setDouble(5, total);
+        ps.executeUpdate();
+        JOptionPane.showMessageDialog(null, "Product sale recorded successfully.");
+    } catch (SQLException e) {
+        JOptionPane.showMessageDialog(null, "Error inserting product sale: " + e.getMessage());
+    }
+}
 
-    String dbURL = "jdbc:mysql://localhost:3306/stock";
-    String username = "root";
-    String password = "";
+    // Method to update stock quantities
 
-    try (Connection conn = DriverManager.getConnection(dbURL, username, password)) {
-        String query = "SELECT id, pro_name, pro_price, img FROM home_stock";
-        PreparedStatement statement = conn.prepareStatement(query);
-        ResultSet resultSet = statement.executeQuery();
-
-        while (resultSet.next()) {
-            int id = resultSet.getInt("id");
-            String name = resultSet.getString("pro_name");
-            double price = resultSet.getDouble("pro_price");
-            String imagePath = resultSet.getString("img"); // The image path stored as VARCHAR
-
-            ImageIcon productImage = null;
-
-            // Check if the image path is valid and load the image
-            if (imagePath != null && !imagePath.isEmpty()) {
-                File imageFile = new File(imagePath);
-                if (imageFile.exists()) {
-                    productImage = new ImageIcon(imageFile.getAbsolutePath());
-                } else {
-                    System.out.println("Image not found at: " + imagePath);
-                    productImage = new ImageIcon(); // Optionally, set a placeholder image
-                }
-            } else {
-                System.out.println("No image path provided for product: " + name);
-                productImage = new ImageIcon(); // Optionally, set a placeholder image
+    private void updateStockQuantities() {
+        Connection connection = null;
+        PreparedStatement pstmt = null;
+        try {
+            if (cn == null || cn.isClosed()) {
+                conDatabase(); // Ensure the connection is established
             }
 
-            // Create a new Product object
-            Product product = new Product(id, name, price, productImage);
-            products.add(product);
+            // Assuming cartItems is a List of Product objects, each with an id and quantity
+            for (Product product : cartItems) {
+                String updateSQL = "UPDATE home_stock SET pro_qty = pro_qty - ? WHERE pro_name = ?";
+                pstmt = cn.prepareStatement(updateSQL);
+                pstmt.setInt(1, product.getQty()); // Quantity to deduct
+                pstmt.setString(2, product.getName()); // Product name
+                pstmt.executeUpdate();
+            }
+
+            // Notify the user of successful stock update
+            //JOptionPane.showMessageDialog(null, "Stock quantities updated successfully.");
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, "Error updating stock quantities: " + ex.getMessage());
+        } finally {
+            if (pstmt != null) {
+                try {
+                    pstmt.close(); // Close the PreparedStatement to release resources
+                } catch (SQLException ex) {
+                    JOptionPane.showMessageDialog(null, "Error closing PreparedStatement: " + ex.getMessage());
+                }
+            }
         }
-    } catch (SQLException ex) {
-        ex.printStackTrace();
     }
 
-    return products;
-}
+    private List<Product> fetchProducts() {
+        List<Product> products = new ArrayList<>();
 
-   private void displayProducts(List<Product> products) {
-    main.removeAll();
+        String dbURL = "jdbc:mysql://localhost:3306/stock";
+        String username = "root";
+        String password = "";
 
-    for (Product product : products) {
-        JPanel productPanel = new JPanel();
-        productPanel.setPreferredSize(new Dimension(350, 300));
-        productPanel.setLayout(null);
-        productPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+        try (Connection conn = DriverManager.getConnection(dbURL, username, password)) {
+            String query = "SELECT id, pro_name, pro_price, img FROM home_stock";
+            PreparedStatement statement = conn.prepareStatement(query);
+            ResultSet resultSet = statement.executeQuery();
 
-        ImageIcon resizedIcon = new ImageIcon(resizeImage(product.getImage().getImage(), 200, 200));
-        JLabel imageLabel = new JLabel(resizedIcon);
-        imageLabel.setBounds(50, 10, 210, 200);
-        productPanel.add(imageLabel);
+            while (resultSet.next()) {
+                int id = resultSet.getInt("id");
+                String name = resultSet.getString("pro_name");
+                double price = resultSet.getDouble("pro_price");
+                String imagePath = resultSet.getString("img"); // The image path stored as VARCHAR
 
-        JLabel idLabel = new JLabel("ID: " + product.getId()); // Add ID label
-        idLabel.setBounds(10, 220, 300, 20);
-        productPanel.add(idLabel);
+                ImageIcon productImage = null;
 
-        JLabel nameLabel = new JLabel("Name: " + product.getName());
-        nameLabel.setBounds(10, 240, 300, 20);
-        productPanel.add(nameLabel);
+                // Check if the image path is valid and load the image
+                if (imagePath != null && !imagePath.isEmpty()) {
+                    File imageFile = new File(imagePath);
+                    if (imageFile.exists()) {
+                        productImage = new ImageIcon(imageFile.getAbsolutePath());
+                    } else {
+                        System.out.println("Image not found at: " + imagePath);
+                        productImage = new ImageIcon(); // Optionally, set a placeholder image
+                    }
+                } else {
+                    System.out.println("No image path provided for product: " + name);
+                    productImage = new ImageIcon(); // Optionally, set a placeholder image
+                }
 
-        JLabel priceLabel = new JLabel("Price: $" + product.getPrice());
-        priceLabel.setBounds(10, 260, 300, 20);
-        productPanel.add(priceLabel);
+                // Create a new Product object
+                Product product = new Product(id, name, price, productImage);
+                products.add(product);
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
 
-        JButton addButton = new JButton("Add to Cart");
-        mouseCursorPointer(addButton);
-        addButton.setBackground(Color.cyan);
-        addButton.setBounds(100, 290, 120, 20);
-        addButton.addActionListener(e -> {
-            addToCart(product);
-        });
-        productPanel.add(addButton);
-
-        main.add(productPanel);
+        return products;
     }
 
-    revalidate();
-    repaint();
-}
+    private void displayProducts(List<Product> products) {
+        main.removeAll();
+
+        for (Product product : products) {
+            JPanel productPanel = new JPanel();
+            productPanel.setPreferredSize(new Dimension(350, 300));
+            productPanel.setLayout(null);
+            productPanel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+
+            ImageIcon resizedIcon = new ImageIcon(resizeImage(product.getImage().getImage(), 200, 200));
+            JLabel imageLabel = new JLabel(resizedIcon);
+            imageLabel.setBounds(50, 10, 210, 200);
+            productPanel.add(imageLabel);
+
+            JLabel idLabel = new JLabel("ID: " + product.getId()); // Add ID label
+            idLabel.setBounds(10, 220, 300, 20);
+            productPanel.add(idLabel);
+
+            JLabel nameLabel = new JLabel("Name: " + product.getName());
+            nameLabel.setBounds(10, 240, 300, 20);
+            productPanel.add(nameLabel);
+
+            JLabel priceLabel = new JLabel("Price: $" + product.getPrice());
+            priceLabel.setBounds(10, 260, 300, 20);
+            productPanel.add(priceLabel);
+
+            JButton addButton = new JButton("Add to Cart");
+            mouseCursorPointer(addButton);
+            addButton.setBackground(Color.cyan);
+            addButton.setBounds(100, 290, 120, 20);
+            addButton.addActionListener(e -> {
+                addToCart(product);
+            });
+            productPanel.add(addButton);
+
+            main.add(productPanel);
+        }
+
+        revalidate();
+        repaint();
+    }
 
     private Image resizeImage(Image originalImage, int width, int height) {
         return originalImage.getScaledInstance(width, height, Image.SCALE_SMOOTH);
     }
-   public static void main(String[] args) {
-    // Create and display UiSaleHomePage frame using SwingUtilities
-    SwingUtilities.invokeLater(() -> {
-        // Create the JFrame for UiSaleHomePage
-        JFrame frame = new JFrame("Sale Home Page");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(1500, 700);
 
-        // Create the UiSaleHomePage component
-        UiSaleHomePage uiSaleHomePage = new UiSaleHomePage();
+    private void conDatabase() {
+        try {
+            cn = DriverManager.getConnection("jdbc:mysql://localhost:3306/stock", "root", "");
+           // JOptionPane.showMessageDialog(null, "connect succes to database !");
+        } catch (SQLException e) {
+            e.getMessage();
 
-        // Add the UiSaleHomePage component to a JScrollPane for scrolling
-        JScrollPane scrollPane = new JScrollPane(uiSaleHomePage);
+        }
+    }
 
-        // Add the scroll pane to the frame
-        frame.add(scrollPane);
+    private void createTable() {
+        String table = "CREATE TABLE IF NOT EXISTS product_sale ("
+                + "id INT AUTO_INCREMENT PRIMARY KEY, " // Primary key for the product_sale table
+                + "user_id INT, " // Foreign key reference to user table
+                + "pro_name VARCHAR(255), "
+                + "pro_price DOUBLE, "
+                + "pro_quantity INT, "
+                + "total INT, "
+                + "date_create TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+                + "FOREIGN KEY (user_id) REFERENCES user(id))"; // Foreign key constraint
 
-        // Make the frame visible
-        frame.setVisible(true);
-    });
-}
+        Statement sm = null;
+        try {
+            if (cn == null || cn.isClosed()) {
+                conDatabase(); // Ensure the connection is established
+            }
+            sm = cn.createStatement();
+            sm.executeUpdate(table);
+           // JOptionPane.showMessageDialog(null, "Table product_sale created successfully.");
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(null, "Error creating table: " + e.getMessage());
+        } finally {
+            if (sm != null) {
+                try {
+                    sm.close(); // Close the statement to release resources
+                } catch (SQLException e) {
+                    // Handle potential errors
+                    JOptionPane.showMessageDialog(null, "Error closing statement: " + e.getMessage());
+                }
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        // Create and display UiSaleHomePage frame using SwingUtilities
+        SwingUtilities.invokeLater(() -> {
+            // Create the JFrame for UiSaleHomePage
+            JFrame frame = new JFrame("Sale Home Page");
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setSize(1500, 700);
+
+            // Create the UiSaleHomePage component
+            UiSaleHomePage uiSaleHomePage = new UiSaleHomePage();
+
+            // Add the UiSaleHomePage component to a JScrollPane for scrolling
+            JScrollPane scrollPane = new JScrollPane(uiSaleHomePage);
+
+            // Add the scroll pane to the frame
+            frame.add(scrollPane);
+
+            // Make the frame visible
+            frame.setVisible(true);
+        });
+    }
 
 }
