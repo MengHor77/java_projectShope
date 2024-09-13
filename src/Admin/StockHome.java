@@ -650,7 +650,7 @@ class ButtonEditor extends AbstractCellEditor implements TableCellEditor {
         JFrame frame = new JFrame("Stock Home");
         StockHome stockHome = new StockHome();
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        frame.setSize(1500, 700);
+        frame.setSize(1550, 900);
         frame.add(stockHome);
         frame.setVisible(true);
 
