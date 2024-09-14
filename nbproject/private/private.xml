@@ -4,9 +4,11 @@
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/User/GetUserName.java</file>
+            <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Admin/StockHome.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Admin/Mart.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/User/UiSaleHomePage.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/User/LogInUser.java</file>
+            <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Admin/LogInAdmin.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/User/SessionManager.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/User/SignUpUser.java</file>
         </group>

@@ -16,6 +16,25 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.sql.*;
 import javax.swing.table.DefaultTableModel;
+import com.itextpdf.text.Document;
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.Phrase;
+import com.itextpdf.text.pdf.PdfPCell;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
+import com.itextpdf.text.Document;
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.Phrase;
+import com.itextpdf.text.pdf.PdfPCell;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
+
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 public class Mart extends JFrame {
 
@@ -26,7 +45,7 @@ public class Mart extends JFrame {
     private CardLayout cardLayout;
     private JPanel cardPanel;
     private JPanel fileAndTotalPanel;
-
+private JTable table;
     public Mart() {
         setTitle("Mart Application");
         setPreferredSize(new Dimension(1500, 800));
@@ -151,152 +170,213 @@ public class Mart extends JFrame {
         return GetUserName.getUsernameFromId(userId);   // Fetch the username based on the user ID
     }
 
-private void fetchDataForCurrentUser() {
-    int userId = SessionManager.getCurrentUserId();
 
-    // SQL query to group by user_id and product_name, calculating sum of price, quantity, and total
-    String query = "SELECT user_id, pro_name, pro_price, SUM(pro_quantity) AS quantity, SUM(pro_price * pro_quantity) AS total, MAX(date_create) AS date_created " +
-                   "FROM product_sale WHERE user_id = ? GROUP BY user_id, pro_name, pro_price";
 
-    try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD); 
-         PreparedStatement pstmt = conn.prepareStatement(query)) {
+    private void fetchDataForCurrentUser() {
+        int userId = SessionManager.getCurrentUserId();
 
-        pstmt.setInt(1, userId); // Set the userId as a parameter in the query
-        try (ResultSet rs = pstmt.executeQuery()) {
-            // Create table model for displaying data
-            DefaultTableModel tableModel = new DefaultTableModel();
-            tableModel.addColumn("ID"); // Add ID column
-            tableModel.addColumn("Product Name");
-            tableModel.addColumn("Price");
-            tableModel.addColumn("Quantity");
-            tableModel.addColumn("Total");
-            tableModel.addColumn("Date Created");
+        // SQL query to group by user_id and product_name, calculating sum of price, quantity, and total
+        String query = "SELECT user_id, pro_name, pro_price, SUM(pro_quantity) AS quantity, SUM(pro_price * pro_quantity) AS total, MAX(date_create) AS date_created " +
+                       "FROM product_sale WHERE user_id = ? GROUP BY user_id, pro_name, pro_price";
 
-            // Check if the result set contains data
-            if (!rs.isBeforeFirst()) {
-                JOptionPane.showMessageDialog(null, "No sales data found for this user.");
-                return; // Exit if no data is found
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD); 
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+
+            pstmt.setInt(1, userId); // Set the userId as a parameter in the query
+            try (ResultSet rs = pstmt.executeQuery()) {
+                // Create table model for displaying data
+                DefaultTableModel tableModel = new DefaultTableModel();
+                tableModel.addColumn("ID"); // Add ID column
+                tableModel.addColumn("Product Name");
+                tableModel.addColumn("Price");
+                tableModel.addColumn("Quantity");
+                tableModel.addColumn("Total");
+                tableModel.addColumn("Date Created");
+
+                // Check if the result set contains data
+                if (!rs.isBeforeFirst()) {
+                    JOptionPane.showMessageDialog(null, "No sales data found for this user.");
+                    return; // Exit if no data is found
+                }
+
+                // Initialize the ID counter
+                int idCounter = 1;
+
+                // Initialize total sum
+                double totalSum = 0;
+
+                // Populate the table model with data
+                while (rs.next()) {
+                    // Generate an auto-incremented ID
+                    int id = idCounter++;
+                    String proName = rs.getString("pro_name");
+                    double proPrice = rs.getDouble("pro_price");
+                    int quantity = rs.getInt("quantity");
+                    double total = rs.getDouble("total");
+                    Timestamp dateCreated = rs.getTimestamp("date_created");
+
+                    // Add total to the sum
+                    totalSum += total;
+
+                    tableModel.addRow(new Object[]{id, proName, proPrice, quantity, total, dateCreated});
+                }
+
+                // Create JTable with the table model
+                table = new JTable(tableModel); // Initialize the class-level table variable
+                table.setPreferredScrollableViewportSize(new Dimension(1400, 600));
+                table.setFillsViewportHeight(true);
+
+                // Disable column reordering and resizing
+                table.getTableHeader().setReorderingAllowed(false);
+                table.getColumnModel().getColumn(0).setResizable(false); // ID column
+                table.getColumnModel().getColumn(1).setResizable(false);
+                table.getColumnModel().getColumn(2).setResizable(false);
+                table.getColumnModel().getColumn(3).setResizable(false);
+                table.getColumnModel().getColumn(4).setResizable(false);
+                table.getColumnModel().getColumn(5).setResizable(false);
+
+                // Create the File label and its dropdown menu
+                JLabel fileLabel = new JLabel("File");
+                fileLabel.setFont(new Font("Arial", Font.BOLD, 16));
+                fileLabel.setForeground(Color.BLACK);
+                fileLabel.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 20));
+                fileLabel.setOpaque(true);
+                fileLabel.setBackground(Color.gray);
+
+                JPopupMenu fileMenu = new JPopupMenu();
+                JMenuItem saveMenuItem = new JMenuItem("Save");
+                JMenuItem saveAsMenuItem = new JMenuItem("Save As");
+                JMenuItem printMenuItem = new JMenuItem("Print");
+                JMenuItem sumMenuItem = new JMenuItem("Setting");
+
+                fileMenu.add(saveMenuItem);
+                fileMenu.add(saveAsMenuItem);
+                fileMenu.add(printMenuItem);
+                fileMenu.add(sumMenuItem);
+                saveMenuItem.addActionListener(e -> handleSave());
+                saveAsMenuItem.addActionListener(e -> handleSaveAs());
+                printMenuItem.addActionListener(e -> handlePrint());
+                sumMenuItem.addActionListener(e -> handleSetting());
+
+                fileLabel.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mousePressed(MouseEvent e) {
+                        fileMenu.show(fileLabel, 0, fileLabel.getHeight());
+                    }
+                });
+
+                // Create the Refresh label
+                JLabel refreshLabel = new JLabel("Refresh");
+                refreshLabel.setFont(new Font("Arial", Font.BOLD, 16));
+                refreshLabel.setForeground(Color.BLACK);
+                refreshLabel.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 20));
+                refreshLabel.setOpaque(true);
+                refreshLabel.setBackground(Color.gray);
+
+                refreshLabel.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        refreshData(); // Refresh the data when clicked
+                    }
+                });
+
+                // Create the Total label
+                JLabel totalLabel = new JLabel("Total: $" + String.format("%.2f", totalSum));
+                totalLabel.setFont(new Font("Arial", Font.BOLD, 16));
+                totalLabel.setForeground(Color.BLACK);
+                totalLabel.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 20));
+                totalLabel.setOpaque(true);
+                totalLabel.setBackground(Color.gray);
+
+                // Create a panel for the labels
+                JPanel fileAndTotalPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 10));
+                fileAndTotalPanel.setOpaque(false);
+                fileAndTotalPanel.add(fileLabel);
+                fileAndTotalPanel.add(refreshLabel);
+                fileAndTotalPanel.add(totalLabel);
+
+                // Add the File label and the table to a panel
+                JPanel topPanel = new JPanel(new BorderLayout());
+                topPanel.add(fileAndTotalPanel, BorderLayout.WEST);
+                JPanel tablePanel = new JPanel(new BorderLayout());
+                tablePanel.add(new JScrollPane(table), BorderLayout.CENTER);
+
+                // Replace the current content in the Daily Sale panel with the new components
+                JPanel dailySalePanel = (JPanel) cardPanel.getComponent(1); // Assuming it's the second component
+                dailySalePanel.removeAll(); // Clear old data
+                dailySalePanel.setLayout(new BorderLayout()); // Use BorderLayout for the panel
+                dailySalePanel.add(topPanel, BorderLayout.NORTH); // Add the top panel with File and Total labels
+                dailySalePanel.add(tablePanel, BorderLayout.CENTER); // Add the table panel
+                dailySalePanel.revalidate(); // Revalidate to update the UI
+                dailySalePanel.repaint(); // Repaint the panel
             }
 
-            // Initialize the ID counter
-            int idCounter = 1;
-
-            // Initialize total sum
-            double totalSum = 0;
-
-            // Populate the table model with data
-            while (rs.next()) {
-                // Generate an auto-incremented ID
-                int id = idCounter++;
-                String proName = rs.getString("pro_name");
-                double proPrice = rs.getDouble("pro_price");
-                int quantity = rs.getInt("quantity");
-                double total = rs.getDouble("total");
-                Timestamp dateCreated = rs.getTimestamp("date_created");
-
-                // Add total to the sum
-                totalSum += total;
-
-                tableModel.addRow(new Object[]{id, proName, proPrice, quantity, total, dateCreated});
-            }
-
-            // Create JTable with the table model
-            JTable table = new JTable(tableModel);
-            table.setPreferredScrollableViewportSize(new Dimension(1400, 600));
-            table.setFillsViewportHeight(true);
-
-            // Disable column reordering and resizing
-            table.getTableHeader().setReorderingAllowed(false);
-            table.getColumnModel().getColumn(0).setResizable(false); // ID column
-            table.getColumnModel().getColumn(1).setResizable(false);
-            table.getColumnModel().getColumn(2).setResizable(false);
-            table.getColumnModel().getColumn(3).setResizable(false);
-            table.getColumnModel().getColumn(4).setResizable(false);
-            table.getColumnModel().getColumn(5).setResizable(false);
-
-            // Create the File label and its dropdown menu
-            JLabel fileLabel = new JLabel("File");
-            fileLabel.setFont(new Font("Arial", Font.BOLD, 16));
-            fileLabel.setForeground(Color.BLACK);
-            fileLabel.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 20));
-            fileLabel.setOpaque(true);
-            fileLabel.setBackground(Color.gray);
-
-            JPopupMenu fileMenu = new JPopupMenu();
-            JMenuItem saveMenuItem = new JMenuItem("Save");
-            JMenuItem saveAsMenuItem = new JMenuItem("Save As");
-            JMenuItem printMenuItem = new JMenuItem("Print");
-            JMenuItem sumMenuItem = new JMenuItem("setting");
-
-            fileMenu.add(saveMenuItem);
-            fileMenu.add(saveAsMenuItem);
-            fileMenu.add(printMenuItem);
-            fileMenu.add(sumMenuItem);
-            saveMenuItem.addActionListener(e -> handleSave());
-            saveAsMenuItem.addActionListener(e -> handleSaveAs());
-            printMenuItem.addActionListener(e -> handlePrint());
-            sumMenuItem.addActionListener(e -> handleSetting());
-
-            fileLabel.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mousePressed(MouseEvent e) {
-                    fileMenu.show(fileLabel, 0, fileLabel.getHeight());
-                }
-            });
-
-            // Create the Refresh label
-            JLabel refreshLabel = new JLabel("Refresh");
-            refreshLabel.setFont(new Font("Arial", Font.BOLD, 16));
-            refreshLabel.setForeground(Color.BLACK);
-            refreshLabel.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 20));
-            refreshLabel.setOpaque(true);
-            refreshLabel.setBackground(Color.gray);
-
-            refreshLabel.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    refreshData(); // Refresh the data when clicked
-                }
-            });
-
-            // Create the Total label
-            JLabel totalLabel = new JLabel("Total: $" + String.format("%.2f", totalSum));
-            totalLabel.setFont(new Font("Arial", Font.BOLD, 16));
-            totalLabel.setForeground(Color.BLACK);
-            totalLabel.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 20));
-            totalLabel.setOpaque(true);
-            totalLabel.setBackground(Color.gray);
-
-            // Create a panel for the labels
-            JPanel fileAndTotalPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 10));
-            fileAndTotalPanel.setOpaque(false);
-            fileAndTotalPanel.add(fileLabel);
-            fileAndTotalPanel.add(refreshLabel);
-            fileAndTotalPanel.add(totalLabel);
-
-            // Add the File label and the table to a panel
-            JPanel topPanel = new JPanel(new BorderLayout());
-            topPanel.add(fileAndTotalPanel, BorderLayout.WEST);
-            JPanel tablePanel = new JPanel(new BorderLayout());
-            tablePanel.add(new JScrollPane(table), BorderLayout.CENTER);
-
-            // Replace the current content in the Daily Sale panel with the new components
-            JPanel dailySalePanel = (JPanel) cardPanel.getComponent(1); // Assuming it's the second component
-            dailySalePanel.removeAll(); // Clear old data
-            dailySalePanel.setLayout(new BorderLayout()); // Use BorderLayout for the panel
-            dailySalePanel.add(topPanel, BorderLayout.NORTH); // Add the top panel with File and Total labels
-            dailySalePanel.add(tablePanel, BorderLayout.CENTER); // Add the table panel
-            dailySalePanel.revalidate(); // Revalidate to update the UI
-            dailySalePanel.repaint(); // Repaint the panel
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error fetching sales data for user", "Error", JOptionPane.ERROR_MESSAGE);
         }
-
-    } catch (SQLException e) {
-        e.printStackTrace();
-        JOptionPane.showMessageDialog(null, "Error fetching sales data for user", "Error", JOptionPane.ERROR_MESSAGE);
     }
-}
 
-private void refreshData() {
+    private void handleSaveAs() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Save As");
+        fileChooser.setFileFilter(new FileNameExtensionFilter("PDF Documents", "pdf"));
+        int userSelection = fileChooser.showSaveDialog(null);
+
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            File fileToSave = fileChooser.getSelectedFile();
+
+            // Ensure the file has a .pdf extension
+            if (!fileToSave.getName().endsWith(".pdf")) {
+                fileToSave = new File(fileToSave.getAbsolutePath() + ".pdf");
+            }
+
+            // Pass the JTable to saveAsPDF
+            saveAsPDF(fileToSave, table);
+        }
+    }
+
+    private void saveAsPDF(File file, JTable table) {
+        try {
+            Document document = new Document();
+            PdfWriter.getInstance(document, new FileOutputStream(file));
+            document.open();
+
+            PdfPTable pdfTable = new PdfPTable(table.getColumnCount());
+
+            // Add table headers
+            for (int i = 0; i < table.getColumnCount(); i++) {
+                pdfTable.addCell(new PdfPCell(new Phrase(table.getColumnName(i))));
+            }
+
+            // Add table data
+            for (int i = 0; i < table.getRowCount(); i++) {
+                for (int j = 0; j < table.getColumnCount(); j++) {
+                    pdfTable.addCell(table.getValueAt(i, j).toString());
+                }
+            }
+
+            document.add(pdfTable);
+            document.close();
+            JOptionPane.showMessageDialog(null, "PDF file saved successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error saving PDF file", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+ 
+
+    private void handlePrint() {
+        // Implement print functionality
+        JOptionPane.showMessageDialog(null, "Print clicked");
+    }
+
+    private void handleSetting() {
+        // Implement sum functionality
+        JOptionPane.showMessageDialog(null, "handleSetting clicked");
+    }
+    private void refreshData() {
     // Check if cardPanel has the expected number of components
     if (cardPanel.getComponentCount() > 1) {
         // Access the component at index 1 (if it exists)
@@ -322,20 +402,6 @@ private void refreshData() {
         JOptionPane.showMessageDialog(null, "Save clicked");
     }
 
-    private void handleSaveAs() {
-        // Implement save as functionality
-        JOptionPane.showMessageDialog(null, "Save As clicked");
-    }
-
-    private void handlePrint() {
-        // Implement print functionality
-        JOptionPane.showMessageDialog(null, "Print clicked");
-    }
-
-    private void handleSetting() {
-        // Implement sum functionality
-        JOptionPane.showMessageDialog(null, "handleSetting clicked");
-    }
 
     private void handleLogout() {
         // Show confirmation dialog
