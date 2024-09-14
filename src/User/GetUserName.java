@@ -10,6 +10,7 @@ public class GetUserName {
     private static final String USER = "root";
     private static final String PASSWORD = "";
 
+    // Fetch all usernames
     public static List<String> getUsernames() {
         List<String> usernames = new ArrayList<>();
         String query = "SELECT userName_sign FROM user";
@@ -29,9 +30,10 @@ public class GetUserName {
         return usernames;
     }
 
+    // Fetch user ID based on username
     public static int getUserIdFromUsername(String username) {
         int userId = -1;
-        String query = "SELECT id FROM user WHERE userName_sign = ?";
+        String query = "SELECT id FROM user WHERE userName_sign = ?";  // Make sure 'user' and 'userName_sign' are correct
 
         try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
              PreparedStatement pstmt = conn.prepareStatement(query)) {
@@ -47,5 +49,25 @@ public class GetUserName {
             JOptionPane.showMessageDialog(null, "Error fetching user ID", "Error", JOptionPane.ERROR_MESSAGE);
         }
         return userId;
+    }
+
+    // Fetch username based on user ID
+    public static String getUsernameFromId(int userId) {
+        String username = "";
+        String query = "SELECT userName_sign FROM user WHERE id = ?"; // Ensure 'user' and 'userName_sign' are correct
+
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+
+            pstmt.setInt(1, userId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    username = rs.getString("userName_sign");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return username;
     }
 }

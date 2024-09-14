@@ -199,7 +199,7 @@ public class LogInAdmin extends JFrame implements ActionListener {
                 // Create and display StockHome frame
                 SwingUtilities.invokeLater(() -> {
                     JFrame stockHomeFrame = new JFrame("Stock Home");
-                    stockHomeFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                    stockHomeFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
                     stockHomeFrame.setSize(1500, 700);
                     stockHomeFrame.add(new StockHome());
                     stockHomeFrame.setVisible(true);

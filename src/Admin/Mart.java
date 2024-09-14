@@ -60,12 +60,24 @@ public class Mart extends JFrame {
         menuPanel.add(menuItemsPanel, BorderLayout.CENTER);
 
         // Create a panel for the profile and align it to the right
-        JPanel profilePanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 50, 10)); // 30px from the right
-        profilePanel.setOpaque(false);
-        profilePanel.setBorder(BorderFactory.createEmptyBorder(50, 0, 0, 30)); // 80px from the top, 30px from the right
+        // Assume we have a method to get the username from the SessionManager
+        String currentUsername = getUsernameForCurrentUser();
 
+        JPanel profilePanel = new JPanel();
+        profilePanel.setLayout(new BoxLayout(profilePanel, BoxLayout.Y_AXIS)); // Use BoxLayout to stack components vertically
+        profilePanel.setOpaque(false);
+        profilePanel.setBorder(BorderFactory.createEmptyBorder(50, 0, 0, 30)); // 50px from the top, 30px from the right
+
+// Create profile image
         RoundImagePanel profileImagePanel = new RoundImagePanel("src/Images/profile/profile.png", 50, 30, 0, 0);
         profilePanel.add(profileImagePanel);
+
+// Add the username below the profile image
+        JLabel usernameLabel = new JLabel(getUsernameForCurrentUser());
+        usernameLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        usernameLabel.setForeground(Color.WHITE);
+        usernameLabel.setAlignmentX(Component.CENTER_ALIGNMENT); // Center alignment
+        profilePanel.add(usernameLabel); // Add the username label to the profile panel
 
         menuPanel.add(profilePanel, BorderLayout.EAST);
 
@@ -134,73 +146,77 @@ public class Mart extends JFrame {
         setVisible(true);
     }
 
-    // Fetch data from product_sale table for the currently selected user
-   private void fetchDataForCurrentUser() {
-    int userId = SessionManager.getCurrentUserId();
-    System.out.println("Fetching data for user ID: " + userId);
-
-    String query = "SELECT * FROM product_sale WHERE user_id = ?"; // Query based on the user_id
-
-    try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
-         PreparedStatement pstmt = conn.prepareStatement(query)) {
-
-        pstmt.setInt(1, userId); // Set the userId as a parameter in the query
-        try (ResultSet rs = pstmt.executeQuery()) {
-            // Create table model for displaying data
-            DefaultTableModel tableModel = new DefaultTableModel();
-            tableModel.addColumn("Product Name");
-            tableModel.addColumn("Price");
-            tableModel.addColumn("Quantity");
-            tableModel.addColumn("Total");
-            tableModel.addColumn("Date Created");
-
-            // Check if the result set contains data
-            if (!rs.isBeforeFirst()) {
-                JOptionPane.showMessageDialog(null, "No sales data found for this user.");
-                return; // Exit if no data is found
-            }
-
-            // Populate the table model with data
-            while (rs.next()) {
-                String proName = rs.getString("pro_name");
-                double proPrice = rs.getDouble("pro_price");
-                int proQuantity = rs.getInt("pro_quantity");
-                int total = rs.getInt("total");
-                Timestamp dateCreated = rs.getTimestamp("date_create");
-
-                tableModel.addRow(new Object[]{proName, proPrice, proQuantity, total, dateCreated});
-            }
-
-            // Create JTable with the table model
-            JTable table = new JTable(tableModel);
-            table.setPreferredScrollableViewportSize(new Dimension(1400, 600));
-            table.setFillsViewportHeight(true);
-
-            // Disable column reordering and resizing
-            table.getTableHeader().setReorderingAllowed(false); // Disable moving columns
-            table.getColumnModel().getColumn(0).setResizable(false); // Disable resizing for column 1
-            table.getColumnModel().getColumn(1).setResizable(false); // Disable resizing for column 2
-            table.getColumnModel().getColumn(2).setResizable(false); // Disable resizing for column 3
-            table.getColumnModel().getColumn(3).setResizable(false); // Disable resizing for column 4
-            table.getColumnModel().getColumn(4).setResizable(false); // Disable resizing for column 5
-
-            // Add the JTable to a panel
-            JPanel tablePanel = new JPanel(new BorderLayout());
-            tablePanel.add(new JScrollPane(table), BorderLayout.CENTER);
-
-            // Replace the current content in the Daily Sale panel with the new table
-            JPanel dailySalePanel = (JPanel) cardPanel.getComponent(1); // Assuming it's the second component
-            dailySalePanel.removeAll(); // Clear old data
-            dailySalePanel.add(tablePanel); // Add the new table
-            dailySalePanel.revalidate(); // Revalidate to update the UI
-            dailySalePanel.repaint(); // Repaint the panel
-        }
-
-    } catch (SQLException e) {
-        e.printStackTrace();
-        JOptionPane.showMessageDialog(null, "Error fetching sales data for user", "Error", JOptionPane.ERROR_MESSAGE);
+    private String getUsernameForCurrentUser() {
+        int userId = SessionManager.getCurrentUserId(); // Get the current user ID from session
+        return GetUserName.getUsernameFromId(userId);   // Fetch the username based on the user ID
     }
-}
+
+    // Fetch data from product_sale table for the currently selected user
+    private void fetchDataForCurrentUser() {
+        int userId = SessionManager.getCurrentUserId();
+        System.out.println("Fetching data for user ID: " + userId);
+
+        String query = "SELECT * FROM product_sale WHERE user_id = ?"; // Query based on the user_id
+
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD); PreparedStatement pstmt = conn.prepareStatement(query)) {
+
+            pstmt.setInt(1, userId); // Set the userId as a parameter in the query
+            try (ResultSet rs = pstmt.executeQuery()) {
+                // Create table model for displaying data
+                DefaultTableModel tableModel = new DefaultTableModel();
+                tableModel.addColumn("Product Name");
+                tableModel.addColumn("Price");
+                tableModel.addColumn("Quantity");
+                tableModel.addColumn("Total");
+                tableModel.addColumn("Date Created");
+
+                // Check if the result set contains data
+                if (!rs.isBeforeFirst()) {
+                    JOptionPane.showMessageDialog(null, "No sales data found for this user.");
+                    return; // Exit if no data is found
+                }
+
+                // Populate the table model with data
+                while (rs.next()) {
+                    String proName = rs.getString("pro_name");
+                    double proPrice = rs.getDouble("pro_price");
+                    int proQuantity = rs.getInt("pro_quantity");
+                    int total = rs.getInt("total");
+                    Timestamp dateCreated = rs.getTimestamp("date_create");
+
+                    tableModel.addRow(new Object[]{proName, proPrice, proQuantity, total, dateCreated});
+                }
+
+                // Create JTable with the table model
+                JTable table = new JTable(tableModel);
+                table.setPreferredScrollableViewportSize(new Dimension(1400, 600));
+                table.setFillsViewportHeight(true);
+
+                // Disable column reordering and resizing
+                table.getTableHeader().setReorderingAllowed(false); // Disable moving columns
+                table.getColumnModel().getColumn(0).setResizable(false); // Disable resizing for column 1
+                table.getColumnModel().getColumn(1).setResizable(false); // Disable resizing for column 2
+                table.getColumnModel().getColumn(2).setResizable(false); // Disable resizing for column 3
+                table.getColumnModel().getColumn(3).setResizable(false); // Disable resizing for column 4
+                table.getColumnModel().getColumn(4).setResizable(false); // Disable resizing for column 5
+
+                // Add the JTable to a panel
+                JPanel tablePanel = new JPanel(new BorderLayout());
+                tablePanel.add(new JScrollPane(table), BorderLayout.CENTER);
+
+                // Replace the current content in the Daily Sale panel with the new table
+                JPanel dailySalePanel = (JPanel) cardPanel.getComponent(1); // Assuming it's the second component
+                dailySalePanel.removeAll(); // Clear old data
+                dailySalePanel.add(tablePanel); // Add the new table
+                dailySalePanel.revalidate(); // Revalidate to update the UI
+                dailySalePanel.repaint(); // Repaint the panel
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error fetching sales data for user", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
 
     private void handleLogout() {
         // Show confirmation dialog
