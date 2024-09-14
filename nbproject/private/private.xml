@@ -9,8 +9,10 @@
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/jv/StockHealthAndBeauty.java</file>
 =======
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/jv/SelectedItem.java</file>
+            <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Admin/StockHome.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/jv/Product.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Components/Slide.java</file>
+<<<<<<< HEAD
 >>>>>>> 448c668 (run in main call sign up class)
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Admin/LogInAdmin.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/jv/HomePage.java</file>
@@ -18,6 +20,12 @@
 <<<<<<< HEAD
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/jv/HealthAndBeautyPage.java</file>
 =======
+=======
+            <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Layoutpage/Footer.java</file>
+            <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Admin/LogInAdmin.java</file>
+            <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/jv/ProductRenderer.java</file>
+            <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/jv/HomePage.java</file>
+>>>>>>> 6eb110d ( version 3)
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Components/Category.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Components/DragDrop.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/User/SignUpUser.java</file>
@@ -39,7 +47,13 @@
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/User/SignUpUser.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/User/LogInUser.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/User/TestDesignLogin.java</file>
+<<<<<<< HEAD
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/jv/UiSaleFoodPage.java</file>
+=======
+            <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/User/SessionManager.java</file>
+            <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Components/Foods.java</file>
+            <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Components/Abouts.java</file>
+>>>>>>> 6eb110d ( version 3)
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Admin/SignUpAdmin.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/jv/DataSaleFoodPage.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/jv/DataSaleAll.java</file>
