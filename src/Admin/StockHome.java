@@ -50,7 +50,7 @@ public StockHome() {
 
     // Create and position the data panel
     dataPanel = new JPanel(new BorderLayout());
-    dataPanel.setBounds(20, 100, 1460, 500); // Adjusted size to fit within the frame
+    dataPanel.setBounds(20, 100, 1460, 600); // Adjusted size to fit within the frame
     add(dataPanel);
 
     // Add listener to search button

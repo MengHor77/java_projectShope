@@ -25,6 +25,7 @@ public class Mart extends JFrame {
 
     private CardLayout cardLayout;
     private JPanel cardPanel;
+    private JPanel fileAndTotalPanel;
 
     public Mart() {
         setTitle("Mart Application");
@@ -50,6 +51,8 @@ public class Mart extends JFrame {
         // Add menu labels
         JLabel homeLabel = createMenuLabel("Home", boldFont);
         JLabel dailySaleLabel = createMenuLabel("Daily Sale", boldFont);
+        mouseCursorPointerJabel(dailySaleLabel);
+
         JLabel adminLabel = createMenuLabel("Admin", boldFont);
 
         menuItemsPanel.add(homeLabel);
@@ -59,10 +62,6 @@ public class Mart extends JFrame {
         menuPanel.add(logoPanel, BorderLayout.WEST);
         menuPanel.add(menuItemsPanel, BorderLayout.CENTER);
 
-        // Create a panel for the profile and align it to the right
-        // Assume we have a method to get the username from the SessionManager
-        String currentUsername = getUsernameForCurrentUser();
-
         JPanel profilePanel = new JPanel();
         profilePanel.setLayout(new BoxLayout(profilePanel, BoxLayout.Y_AXIS)); // Use BoxLayout to stack components vertically
         profilePanel.setOpaque(false);
@@ -71,6 +70,7 @@ public class Mart extends JFrame {
 // Create profile image
         RoundImagePanel profileImagePanel = new RoundImagePanel("src/Images/profile/profile.png", 50, 30, 0, 0);
         profilePanel.add(profileImagePanel);
+        mouseCursorPointer(profileImagePanel);
 
 // Add the username below the profile image
         JLabel usernameLabel = new JLabel(getUsernameForCurrentUser());
@@ -151,71 +151,190 @@ public class Mart extends JFrame {
         return GetUserName.getUsernameFromId(userId);   // Fetch the username based on the user ID
     }
 
-    // Fetch data from product_sale table for the currently selected user
-    private void fetchDataForCurrentUser() {
-        int userId = SessionManager.getCurrentUserId();
-        System.out.println("Fetching data for user ID: " + userId);
+private void fetchDataForCurrentUser() {
+    int userId = SessionManager.getCurrentUserId();
 
-        String query = "SELECT * FROM product_sale WHERE user_id = ?"; // Query based on the user_id
+    // SQL query to group by user_id and product_name, calculating sum of price, quantity, and total
+    String query = "SELECT user_id, pro_name, pro_price, SUM(pro_quantity) AS quantity, SUM(pro_price * pro_quantity) AS total, MAX(date_create) AS date_created " +
+                   "FROM product_sale WHERE user_id = ? GROUP BY user_id, pro_name, pro_price";
 
-        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD); PreparedStatement pstmt = conn.prepareStatement(query)) {
+    try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD); 
+         PreparedStatement pstmt = conn.prepareStatement(query)) {
 
-            pstmt.setInt(1, userId); // Set the userId as a parameter in the query
-            try (ResultSet rs = pstmt.executeQuery()) {
-                // Create table model for displaying data
-                DefaultTableModel tableModel = new DefaultTableModel();
-                tableModel.addColumn("Product Name");
-                tableModel.addColumn("Price");
-                tableModel.addColumn("Quantity");
-                tableModel.addColumn("Total");
-                tableModel.addColumn("Date Created");
+        pstmt.setInt(1, userId); // Set the userId as a parameter in the query
+        try (ResultSet rs = pstmt.executeQuery()) {
+            // Create table model for displaying data
+            DefaultTableModel tableModel = new DefaultTableModel();
+            tableModel.addColumn("ID"); // Add ID column
+            tableModel.addColumn("Product Name");
+            tableModel.addColumn("Price");
+            tableModel.addColumn("Quantity");
+            tableModel.addColumn("Total");
+            tableModel.addColumn("Date Created");
 
-                // Check if the result set contains data
-                if (!rs.isBeforeFirst()) {
-                    JOptionPane.showMessageDialog(null, "No sales data found for this user.");
-                    return; // Exit if no data is found
-                }
-
-                // Populate the table model with data
-                while (rs.next()) {
-                    String proName = rs.getString("pro_name");
-                    double proPrice = rs.getDouble("pro_price");
-                    int proQuantity = rs.getInt("pro_quantity");
-                    int total = rs.getInt("total");
-                    Timestamp dateCreated = rs.getTimestamp("date_create");
-
-                    tableModel.addRow(new Object[]{proName, proPrice, proQuantity, total, dateCreated});
-                }
-
-                // Create JTable with the table model
-                JTable table = new JTable(tableModel);
-                table.setPreferredScrollableViewportSize(new Dimension(1400, 600));
-                table.setFillsViewportHeight(true);
-
-                // Disable column reordering and resizing
-                table.getTableHeader().setReorderingAllowed(false); // Disable moving columns
-                table.getColumnModel().getColumn(0).setResizable(false); // Disable resizing for column 1
-                table.getColumnModel().getColumn(1).setResizable(false); // Disable resizing for column 2
-                table.getColumnModel().getColumn(2).setResizable(false); // Disable resizing for column 3
-                table.getColumnModel().getColumn(3).setResizable(false); // Disable resizing for column 4
-                table.getColumnModel().getColumn(4).setResizable(false); // Disable resizing for column 5
-
-                // Add the JTable to a panel
-                JPanel tablePanel = new JPanel(new BorderLayout());
-                tablePanel.add(new JScrollPane(table), BorderLayout.CENTER);
-
-                // Replace the current content in the Daily Sale panel with the new table
-                JPanel dailySalePanel = (JPanel) cardPanel.getComponent(1); // Assuming it's the second component
-                dailySalePanel.removeAll(); // Clear old data
-                dailySalePanel.add(tablePanel); // Add the new table
-                dailySalePanel.revalidate(); // Revalidate to update the UI
-                dailySalePanel.repaint(); // Repaint the panel
+            // Check if the result set contains data
+            if (!rs.isBeforeFirst()) {
+                JOptionPane.showMessageDialog(null, "No sales data found for this user.");
+                return; // Exit if no data is found
             }
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(null, "Error fetching sales data for user", "Error", JOptionPane.ERROR_MESSAGE);
+            // Initialize the ID counter
+            int idCounter = 1;
+
+            // Initialize total sum
+            double totalSum = 0;
+
+            // Populate the table model with data
+            while (rs.next()) {
+                // Generate an auto-incremented ID
+                int id = idCounter++;
+                String proName = rs.getString("pro_name");
+                double proPrice = rs.getDouble("pro_price");
+                int quantity = rs.getInt("quantity");
+                double total = rs.getDouble("total");
+                Timestamp dateCreated = rs.getTimestamp("date_created");
+
+                // Add total to the sum
+                totalSum += total;
+
+                tableModel.addRow(new Object[]{id, proName, proPrice, quantity, total, dateCreated});
+            }
+
+            // Create JTable with the table model
+            JTable table = new JTable(tableModel);
+            table.setPreferredScrollableViewportSize(new Dimension(1400, 600));
+            table.setFillsViewportHeight(true);
+
+            // Disable column reordering and resizing
+            table.getTableHeader().setReorderingAllowed(false);
+            table.getColumnModel().getColumn(0).setResizable(false); // ID column
+            table.getColumnModel().getColumn(1).setResizable(false);
+            table.getColumnModel().getColumn(2).setResizable(false);
+            table.getColumnModel().getColumn(3).setResizable(false);
+            table.getColumnModel().getColumn(4).setResizable(false);
+            table.getColumnModel().getColumn(5).setResizable(false);
+
+            // Create the File label and its dropdown menu
+            JLabel fileLabel = new JLabel("File");
+            fileLabel.setFont(new Font("Arial", Font.BOLD, 16));
+            fileLabel.setForeground(Color.BLACK);
+            fileLabel.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 20));
+            fileLabel.setOpaque(true);
+            fileLabel.setBackground(Color.gray);
+
+            JPopupMenu fileMenu = new JPopupMenu();
+            JMenuItem saveMenuItem = new JMenuItem("Save");
+            JMenuItem saveAsMenuItem = new JMenuItem("Save As");
+            JMenuItem printMenuItem = new JMenuItem("Print");
+            JMenuItem sumMenuItem = new JMenuItem("setting");
+
+            fileMenu.add(saveMenuItem);
+            fileMenu.add(saveAsMenuItem);
+            fileMenu.add(printMenuItem);
+            fileMenu.add(sumMenuItem);
+            saveMenuItem.addActionListener(e -> handleSave());
+            saveAsMenuItem.addActionListener(e -> handleSaveAs());
+            printMenuItem.addActionListener(e -> handlePrint());
+            sumMenuItem.addActionListener(e -> handleSetting());
+
+            fileLabel.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mousePressed(MouseEvent e) {
+                    fileMenu.show(fileLabel, 0, fileLabel.getHeight());
+                }
+            });
+
+            // Create the Refresh label
+            JLabel refreshLabel = new JLabel("Refresh");
+            refreshLabel.setFont(new Font("Arial", Font.BOLD, 16));
+            refreshLabel.setForeground(Color.BLACK);
+            refreshLabel.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 20));
+            refreshLabel.setOpaque(true);
+            refreshLabel.setBackground(Color.gray);
+
+            refreshLabel.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    refreshData(); // Refresh the data when clicked
+                }
+            });
+
+            // Create the Total label
+            JLabel totalLabel = new JLabel("Total: $" + String.format("%.2f", totalSum));
+            totalLabel.setFont(new Font("Arial", Font.BOLD, 16));
+            totalLabel.setForeground(Color.BLACK);
+            totalLabel.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 20));
+            totalLabel.setOpaque(true);
+            totalLabel.setBackground(Color.gray);
+
+            // Create a panel for the labels
+            JPanel fileAndTotalPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 10));
+            fileAndTotalPanel.setOpaque(false);
+            fileAndTotalPanel.add(fileLabel);
+            fileAndTotalPanel.add(refreshLabel);
+            fileAndTotalPanel.add(totalLabel);
+
+            // Add the File label and the table to a panel
+            JPanel topPanel = new JPanel(new BorderLayout());
+            topPanel.add(fileAndTotalPanel, BorderLayout.WEST);
+            JPanel tablePanel = new JPanel(new BorderLayout());
+            tablePanel.add(new JScrollPane(table), BorderLayout.CENTER);
+
+            // Replace the current content in the Daily Sale panel with the new components
+            JPanel dailySalePanel = (JPanel) cardPanel.getComponent(1); // Assuming it's the second component
+            dailySalePanel.removeAll(); // Clear old data
+            dailySalePanel.setLayout(new BorderLayout()); // Use BorderLayout for the panel
+            dailySalePanel.add(topPanel, BorderLayout.NORTH); // Add the top panel with File and Total labels
+            dailySalePanel.add(tablePanel, BorderLayout.CENTER); // Add the table panel
+            dailySalePanel.revalidate(); // Revalidate to update the UI
+            dailySalePanel.repaint(); // Repaint the panel
         }
+
+    } catch (SQLException e) {
+        e.printStackTrace();
+        JOptionPane.showMessageDialog(null, "Error fetching sales data for user", "Error", JOptionPane.ERROR_MESSAGE);
+    }
+}
+
+private void refreshData() {
+    // Check if cardPanel has the expected number of components
+    if (cardPanel.getComponentCount() > 1) {
+        // Access the component at index 1 (if it exists)
+        JPanel dailySalePanel = (JPanel) cardPanel.getComponent(1);
+        
+        // Make sure the component is a JPanel
+        if (dailySalePanel instanceof JPanel) {
+            // Perform the refresh operations here
+            // Example: refresh the data
+            JOptionPane.showMessageDialog(null, "click refresh");
+            fetchDataForCurrentUser();
+        } else {
+            System.err.println("Component at index 1 is not a JPanel.");
+        }
+    } else {
+        System.err.println("CardPanel does not contain enough components.");
+    }
+}
+
+// Implement the action handlers for the menu items
+    private void handleSave() {
+        // Implement save functionality
+        JOptionPane.showMessageDialog(null, "Save clicked");
+    }
+
+    private void handleSaveAs() {
+        // Implement save as functionality
+        JOptionPane.showMessageDialog(null, "Save As clicked");
+    }
+
+    private void handlePrint() {
+        // Implement print functionality
+        JOptionPane.showMessageDialog(null, "Print clicked");
+    }
+
+    private void handleSetting() {
+        // Implement sum functionality
+        JOptionPane.showMessageDialog(null, "handleSetting clicked");
     }
 
     private void handleLogout() {
@@ -250,6 +369,36 @@ public class Mart extends JFrame {
         label.setBackground(Color.gray);
         label.setPreferredSize(new Dimension(150, 120));
         return label;
+    }
+
+    private void mouseCursorPointer(RoundImagePanel roundImagePanel) {
+        roundImagePanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                roundImagePanel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                roundImagePanel.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+            }
+        });
+    }
+
+    private void mouseCursorPointerJabel(JLabel label) {
+        label.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                label.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                label.setForeground(Color.cyan);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                label.setCursor(new Cursor(Cursor.DEFAULT_CURSOR));
+                label.setForeground(Color.BLACK);
+            }
+        });
     }
 
     private MouseAdapter createMenuMouseListener(Runnable onClick, JLabel label) {
