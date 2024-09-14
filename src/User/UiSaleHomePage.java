@@ -311,7 +311,6 @@ public class UiSaleHomePage extends JPanel {
             JOptionPane.showMessageDialog(null, "Cash payment successful!");
         } else {
             showQRCode();
-            JOptionPane.showMessageDialog(null, "QR Code payment successful!");
         }
         
         updateStockQuantities();
@@ -341,7 +340,6 @@ public class UiSaleHomePage extends JPanel {
         ps.setInt(4, productQuantity);
         ps.setDouble(5, total);
         ps.executeUpdate();
-        JOptionPane.showMessageDialog(null, "Product sale recorded successfully.");
     } catch (SQLException e) {
         JOptionPane.showMessageDialog(null, "Error inserting product sale: " + e.getMessage());
     }
