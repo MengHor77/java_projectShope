@@ -4,12 +4,13 @@
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/jv/SelectedItem.java</file>
+            <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Admin/StockHome.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/jv/Product.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Components/Slide.java</file>
-            <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Admin/LogInAdmin.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Layoutpage/Footer.java</file>
-            <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/jv/HomePage.java</file>
+            <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Admin/LogInAdmin.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/jv/ProductRenderer.java</file>
+            <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/jv/HomePage.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Components/Category.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Components/DragDrop.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/User/SignUpUser.java</file>
@@ -18,6 +19,7 @@
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/User/LogInUser.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Components/HealthAndBeautys.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/User/TestDesignLogin.java</file>
+            <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/User/SessionManager.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Components/Foods.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Components/Abouts.java</file>
             <file>file:/D:/project%20java%20shcool/mart_connect_xamm/src/Admin/SignUpAdmin.java</file>
