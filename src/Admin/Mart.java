@@ -5,7 +5,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Ellipse2D;
 import javax.swing.*;
-import javax.swing.JOptionPane;
 import jv.HomePage;
 import Admin.LogInAdmin;
 import User.GetUserName;
@@ -17,24 +16,15 @@ import java.util.List;
 import java.sql.*;
 import javax.swing.table.DefaultTableModel;
 import com.itextpdf.text.Document;
-import com.itextpdf.text.DocumentException;
 import com.itextpdf.text.Phrase;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
-import com.itextpdf.text.Document;
-import com.itextpdf.text.DocumentException;
-import com.itextpdf.text.Phrase;
-import com.itextpdf.text.pdf.PdfPCell;
-import com.itextpdf.text.pdf.PdfPTable;
-import com.itextpdf.text.pdf.PdfWriter;
-
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 
 public class Mart extends JFrame {
 
@@ -44,8 +34,8 @@ public class Mart extends JFrame {
 
     private CardLayout cardLayout;
     private JPanel cardPanel;
-    private JPanel fileAndTotalPanel;
-private JTable table;
+    private JTable table;
+
     public Mart() {
         setTitle("Mart Application");
         setPreferredSize(new Dimension(1500, 800));
@@ -86,17 +76,17 @@ private JTable table;
         profilePanel.setOpaque(false);
         profilePanel.setBorder(BorderFactory.createEmptyBorder(50, 0, 0, 30)); // 50px from the top, 30px from the right
 
-// Create profile image
+        // Create profile image
         RoundImagePanel profileImagePanel = new RoundImagePanel("src/Images/profile/profile.png", 50, 30, 0, 0);
         profilePanel.add(profileImagePanel);
         mouseCursorPointer(profileImagePanel);
 
-// Add the username below the profile image
+        // Add the username below the profile image
         JLabel usernameLabel = new JLabel(getUsernameForCurrentUser());
         usernameLabel.setFont(new Font("Arial", Font.PLAIN, 14));
         usernameLabel.setForeground(Color.WHITE);
-        usernameLabel.setAlignmentX(Component.CENTER_ALIGNMENT); // Center alignment
-        profilePanel.add(usernameLabel); // Add the username label to the profile panel
+        usernameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        profilePanel.add(usernameLabel);
 
         menuPanel.add(profilePanel, BorderLayout.EAST);
 
@@ -140,15 +130,15 @@ private JTable table;
             userItem.addActionListener(evt -> {
                 int userId = GetUserName.getUserIdFromUsername(username);
                 if (userId != -1) {
-                    SessionManager.setCurrentUserId(userId); // Set the current user session
-                    showPanel("Daily_sale"); // Show the "Daily Sale" panel
-                    fetchDataForCurrentUser(); // Fetch and display the data for the selected user
+                    SessionManager.setCurrentUserId(userId);
+                    showPanel("Daily_sale");
+                    fetchDataForCurrentUser();
                 }
             });
             dailySaleMenu.add(userItem);
         }
 
-// MouseListener for the Daily Sale dropdown menu
+        // MouseListener for the Daily Sale dropdown menu
         dailySaleLabel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -156,7 +146,7 @@ private JTable table;
             }
         });
 
-// Add action listeners to menu labels
+        // Add action listeners to menu labels
         homeLabel.addMouseListener(createMenuMouseListener(() -> showPanel("Home_page"), homeLabel));
         adminLabel.addMouseListener(createMenuMouseListener(() -> new LogInAdmin(), adminLabel));
 
@@ -170,17 +160,14 @@ private JTable table;
         return GetUserName.getUsernameFromId(userId);   // Fetch the username based on the user ID
     }
 
-
-
     private void fetchDataForCurrentUser() {
         int userId = SessionManager.getCurrentUserId();
 
         // SQL query to group by user_id and product_name, calculating sum of price, quantity, and total
-        String query = "SELECT user_id, pro_name, pro_price, SUM(pro_quantity) AS quantity, SUM(pro_price * pro_quantity) AS total, MAX(date_create) AS date_created " +
-                       "FROM product_sale WHERE user_id = ? GROUP BY user_id, pro_name, pro_price";
+        String query = "SELECT user_id, pro_name, pro_price, SUM(pro_quantity) AS quantity, SUM(pro_price * pro_quantity) AS total, MAX(date_create) AS date_created "
+                + "FROM product_sale WHERE user_id = ? GROUP BY user_id, pro_name, pro_price";
 
-        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD); 
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
+        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD); PreparedStatement pstmt = conn.prepareStatement(query)) {
 
             pstmt.setInt(1, userId); // Set the userId as a parameter in the query
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -199,15 +186,11 @@ private JTable table;
                     return; // Exit if no data is found
                 }
 
-                // Initialize the ID counter
                 int idCounter = 1;
 
-                // Initialize total sum
                 double totalSum = 0;
 
-                // Populate the table model with data
                 while (rs.next()) {
-                    // Generate an auto-incremented ID
                     int id = idCounter++;
                     String proName = rs.getString("pro_name");
                     double proPrice = rs.getDouble("pro_price");
@@ -215,18 +198,15 @@ private JTable table;
                     double total = rs.getDouble("total");
                     Timestamp dateCreated = rs.getTimestamp("date_created");
 
-                    // Add total to the sum
                     totalSum += total;
 
                     tableModel.addRow(new Object[]{id, proName, proPrice, quantity, total, dateCreated});
                 }
 
-                // Create JTable with the table model
                 table = new JTable(tableModel); // Initialize the class-level table variable
                 table.setPreferredScrollableViewportSize(new Dimension(1400, 600));
                 table.setFillsViewportHeight(true);
 
-                // Disable column reordering and resizing
                 table.getTableHeader().setReorderingAllowed(false);
                 table.getColumnModel().getColumn(0).setResizable(false); // ID column
                 table.getColumnModel().getColumn(1).setResizable(false);
@@ -302,13 +282,13 @@ private JTable table;
                 tablePanel.add(new JScrollPane(table), BorderLayout.CENTER);
 
                 // Replace the current content in the Daily Sale panel with the new components
-                JPanel dailySalePanel = (JPanel) cardPanel.getComponent(1); // Assuming it's the second component
+                JPanel dailySalePanel = (JPanel) cardPanel.getComponent(1);
                 dailySalePanel.removeAll(); // Clear old data
-                dailySalePanel.setLayout(new BorderLayout()); // Use BorderLayout for the panel
-                dailySalePanel.add(topPanel, BorderLayout.NORTH); // Add the top panel with File and Total labels
-                dailySalePanel.add(tablePanel, BorderLayout.CENTER); // Add the table panel
-                dailySalePanel.revalidate(); // Revalidate to update the UI
-                dailySalePanel.repaint(); // Repaint the panel
+                dailySalePanel.setLayout(new BorderLayout());
+                dailySalePanel.add(topPanel, BorderLayout.NORTH);
+                dailySalePanel.add(tablePanel, BorderLayout.CENTER);
+                dailySalePanel.revalidate();
+                dailySalePanel.repaint();
             }
 
         } catch (SQLException e) {
@@ -326,12 +306,10 @@ private JTable table;
         if (userSelection == JFileChooser.APPROVE_OPTION) {
             File fileToSave = fileChooser.getSelectedFile();
 
-            // Ensure the file has a .pdf extension
             if (!fileToSave.getName().endsWith(".pdf")) {
                 fileToSave = new File(fileToSave.getAbsolutePath() + ".pdf");
             }
 
-            // Pass the JTable to saveAsPDF
             saveAsPDF(fileToSave, table);
         }
     }
@@ -364,47 +342,35 @@ private JTable table;
             JOptionPane.showMessageDialog(null, "Error saving PDF file", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-    
- 
 
     private void handlePrint() {
-        // Implement print functionality
         JOptionPane.showMessageDialog(null, "Print clicked");
     }
 
     private void handleSetting() {
-        // Implement sum functionality
         JOptionPane.showMessageDialog(null, "handleSetting clicked");
     }
-    private void refreshData() {
-    // Check if cardPanel has the expected number of components
-    if (cardPanel.getComponentCount() > 1) {
-        // Access the component at index 1 (if it exists)
-        JPanel dailySalePanel = (JPanel) cardPanel.getComponent(1);
-        
-        // Make sure the component is a JPanel
-        if (dailySalePanel instanceof JPanel) {
-            // Perform the refresh operations here
-            // Example: refresh the data
-            JOptionPane.showMessageDialog(null, "click refresh");
-            fetchDataForCurrentUser();
-        } else {
-            System.err.println("Component at index 1 is not a JPanel.");
-        }
-    } else {
-        System.err.println("CardPanel does not contain enough components.");
-    }
-}
 
-// Implement the action handlers for the menu items
+    private void refreshData() {
+        if (cardPanel.getComponentCount() > 1) {
+            JPanel dailySalePanel = (JPanel) cardPanel.getComponent(1);
+
+            if (dailySalePanel instanceof JPanel) {
+                JOptionPane.showMessageDialog(null, "click refresh");
+                fetchDataForCurrentUser();
+            } else {
+                System.err.println("Component at index 1 is not a JPanel.");
+            }
+        } else {
+            System.err.println("CardPanel does not contain enough components.");
+        }
+    }
+
     private void handleSave() {
-        // Implement save functionality
         JOptionPane.showMessageDialog(null, "Save clicked");
     }
 
-
     private void handleLogout() {
-        // Show confirmation dialog
         int response = JOptionPane.showConfirmDialog(this,
                 "Are you sure you want to logout?",
                 "Confirm Logout",
@@ -412,19 +378,15 @@ private JTable table;
                 JOptionPane.QUESTION_MESSAGE);
 
         if (response == JOptionPane.YES_OPTION) {
-            // Capture the current time
             LocalTime now = LocalTime.now();
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("h:mm:ss a"); // 12-hour format with AM/PM
             String formattedNow = now.format(formatter);
 
-            // Print the logout time to the console (or you could store it in a log file or database)
             JOptionPane.showMessageDialog(null, "User logged out at: " + formattedNow);
 
-            // Proceed with logout
             this.dispose();
-            new SignUpUser(); // Optionally open the SignUpUser frame
+            new SignUpUser();
         }
-        // If the user chose "No", do nothing
     }
 
     private JLabel createMenuLabel(String text, Font font) {
