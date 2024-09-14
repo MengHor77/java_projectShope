@@ -8,11 +8,20 @@ import javax.swing.*;
 import javax.swing.JOptionPane;
 import jv.HomePage;
 import Admin.LogInAdmin;
+import User.GetUserName;
+import User.SessionManager;
 import User.SignUpUser;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.sql.*;
+import javax.swing.table.DefaultTableModel;
 
 public class Mart extends JFrame {
+
+    private static final String URL = "jdbc:mysql://localhost:3306/stock";
+    private static final String USER = "root";
+    private static final String PASSWORD = "";
 
     private CardLayout cardLayout;
     private JPanel cardPanel;
@@ -77,26 +86,46 @@ public class Mart extends JFrame {
         JPanel dailySalePanel = createPagePanel("Daily Sale", null, boldFont);
         cardPanel.add(dailySalePanel, "Daily_sale");
 
-        
         // Initialize profile menu (dropdown)
-      JPopupMenu  profileMenu = new JPopupMenu();
+        JPopupMenu profileMenu = new JPopupMenu();
         JMenuItem logoutMenuItem = new JMenuItem("Logout");
         profileMenu.add(logoutMenuItem);
 
-        
         profileImagePanel.addMouseListener(new MouseAdapter() {
             @Override
-            public void mouseEntered(MouseEvent e) {
-                profileMenu.show(profileImagePanel, 0, profileImagePanel.getHeight()); 
+            public void mouseClicked(MouseEvent e) {
+                profileMenu.show(profileImagePanel, 0, profileImagePanel.getHeight());
             }
         });
 
-        
-        logoutMenuItem.addActionListener(e -> handleLogout()); 
+        logoutMenuItem.addActionListener(e -> handleLogout());
 
-      
+        // Initialize Daily Sale menu (dropdown)
+        JPopupMenu dailySaleMenu = new JPopupMenu();
+        List<String> usernames = GetUserName.getUsernames();
 
-        // Add action listeners to menu labels
+        for (String username : usernames) {
+            JMenuItem userItem = new JMenuItem(username);
+            userItem.addActionListener(evt -> {
+                int userId = GetUserName.getUserIdFromUsername(username);
+                if (userId != -1) {
+                    SessionManager.setCurrentUserId(userId); // Set the current user session
+                    showPanel("Daily_sale"); // Show the "Daily Sale" panel
+                    fetchDataForCurrentUser(); // Fetch and display the data for the selected user
+                }
+            });
+            dailySaleMenu.add(userItem);
+        }
+
+// MouseListener for the Daily Sale dropdown menu
+        dailySaleLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                dailySaleMenu.show(dailySaleLabel, 0, dailySaleLabel.getHeight());
+            }
+        });
+
+// Add action listeners to menu labels
         homeLabel.addMouseListener(createMenuMouseListener(() -> showPanel("Home_page"), homeLabel));
         adminLabel.addMouseListener(createMenuMouseListener(() -> new LogInAdmin(), adminLabel));
 
@@ -105,30 +134,97 @@ public class Mart extends JFrame {
         setVisible(true);
     }
 
+    // Fetch data from product_sale table for the currently selected user
+   private void fetchDataForCurrentUser() {
+    int userId = SessionManager.getCurrentUserId();
+    System.out.println("Fetching data for user ID: " + userId);
 
-private void handleLogout() {
-    // Show confirmation dialog
-    int response = JOptionPane.showConfirmDialog(this, 
-        "Are you sure you want to logout?", 
-        "Confirm Logout", 
-        JOptionPane.YES_NO_OPTION,
-        JOptionPane.QUESTION_MESSAGE);
+    String query = "SELECT * FROM product_sale WHERE user_id = ?"; // Query based on the user_id
 
-    if (response == JOptionPane.YES_OPTION) {
-        // Capture the current time
-        LocalTime now = LocalTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("h:mm:ss a"); // 12-hour format with AM/PM
-        String formattedNow = now.format(formatter);
+    try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+         PreparedStatement pstmt = conn.prepareStatement(query)) {
 
-        // Print the logout time to the console (or you could store it in a log file or database)
-       JOptionPane.showMessageDialog(null,"User logged out at: " + formattedNow);
+        pstmt.setInt(1, userId); // Set the userId as a parameter in the query
+        try (ResultSet rs = pstmt.executeQuery()) {
+            // Create table model for displaying data
+            DefaultTableModel tableModel = new DefaultTableModel();
+            tableModel.addColumn("Product Name");
+            tableModel.addColumn("Price");
+            tableModel.addColumn("Quantity");
+            tableModel.addColumn("Total");
+            tableModel.addColumn("Date Created");
 
-        // Proceed with logout
-        this.dispose();
-        new SignUpUser(); // Optionally open the SignUpUser frame
+            // Check if the result set contains data
+            if (!rs.isBeforeFirst()) {
+                JOptionPane.showMessageDialog(null, "No sales data found for this user.");
+                return; // Exit if no data is found
+            }
+
+            // Populate the table model with data
+            while (rs.next()) {
+                String proName = rs.getString("pro_name");
+                double proPrice = rs.getDouble("pro_price");
+                int proQuantity = rs.getInt("pro_quantity");
+                int total = rs.getInt("total");
+                Timestamp dateCreated = rs.getTimestamp("date_create");
+
+                tableModel.addRow(new Object[]{proName, proPrice, proQuantity, total, dateCreated});
+            }
+
+            // Create JTable with the table model
+            JTable table = new JTable(tableModel);
+            table.setPreferredScrollableViewportSize(new Dimension(1400, 600));
+            table.setFillsViewportHeight(true);
+
+            // Disable column reordering and resizing
+            table.getTableHeader().setReorderingAllowed(false); // Disable moving columns
+            table.getColumnModel().getColumn(0).setResizable(false); // Disable resizing for column 1
+            table.getColumnModel().getColumn(1).setResizable(false); // Disable resizing for column 2
+            table.getColumnModel().getColumn(2).setResizable(false); // Disable resizing for column 3
+            table.getColumnModel().getColumn(3).setResizable(false); // Disable resizing for column 4
+            table.getColumnModel().getColumn(4).setResizable(false); // Disable resizing for column 5
+
+            // Add the JTable to a panel
+            JPanel tablePanel = new JPanel(new BorderLayout());
+            tablePanel.add(new JScrollPane(table), BorderLayout.CENTER);
+
+            // Replace the current content in the Daily Sale panel with the new table
+            JPanel dailySalePanel = (JPanel) cardPanel.getComponent(1); // Assuming it's the second component
+            dailySalePanel.removeAll(); // Clear old data
+            dailySalePanel.add(tablePanel); // Add the new table
+            dailySalePanel.revalidate(); // Revalidate to update the UI
+            dailySalePanel.repaint(); // Repaint the panel
+        }
+
+    } catch (SQLException e) {
+        e.printStackTrace();
+        JOptionPane.showMessageDialog(null, "Error fetching sales data for user", "Error", JOptionPane.ERROR_MESSAGE);
     }
-    // If the user chose "No", do nothing
 }
+
+    private void handleLogout() {
+        // Show confirmation dialog
+        int response = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to logout?",
+                "Confirm Logout",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE);
+
+        if (response == JOptionPane.YES_OPTION) {
+            // Capture the current time
+            LocalTime now = LocalTime.now();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("h:mm:ss a"); // 12-hour format with AM/PM
+            String formattedNow = now.format(formatter);
+
+            // Print the logout time to the console (or you could store it in a log file or database)
+            JOptionPane.showMessageDialog(null, "User logged out at: " + formattedNow);
+
+            // Proceed with logout
+            this.dispose();
+            new SignUpUser(); // Optionally open the SignUpUser frame
+        }
+        // If the user chose "No", do nothing
+    }
 
     private JLabel createMenuLabel(String text, Font font) {
         JLabel label = new JLabel(text, JLabel.CENTER);
@@ -188,6 +284,7 @@ private void handleLogout() {
     }
 
     static class RoundImagePanel extends JPanel {
+
         private Image img;
         private int width, height;
 
@@ -219,6 +316,6 @@ private void handleLogout() {
 
     public static void main(String[] args) {
         new SignUpUser();
-       
+
     }
 }
