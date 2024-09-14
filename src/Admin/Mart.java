@@ -9,6 +9,8 @@ import javax.swing.JOptionPane;
 import jv.HomePage;
 import Admin.LogInAdmin;
 import User.SignUpUser;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 
 public class Mart extends JFrame {
 
@@ -103,6 +105,7 @@ public class Mart extends JFrame {
         setVisible(true);
     }
 
+
 private void handleLogout() {
     // Show confirmation dialog
     int response = JOptionPane.showConfirmDialog(this, 
@@ -112,7 +115,15 @@ private void handleLogout() {
         JOptionPane.QUESTION_MESSAGE);
 
     if (response == JOptionPane.YES_OPTION) {
-        // User chose "Yes", proceed with logout
+        // Capture the current time
+        LocalTime now = LocalTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("h:mm:ss a"); // 12-hour format with AM/PM
+        String formattedNow = now.format(formatter);
+
+        // Print the logout time to the console (or you could store it in a log file or database)
+       JOptionPane.showMessageDialog(null,"User logged out at: " + formattedNow);
+
+        // Proceed with logout
         this.dispose();
         new SignUpUser(); // Optionally open the SignUpUser frame
     }
