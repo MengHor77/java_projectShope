@@ -213,7 +213,9 @@ public class SignUpUser extends JFrame implements ActionListener {
             JOptionPane.showMessageDialog(null, "Passwords do not match", "Error", JOptionPane.ERROR_MESSAGE);
         } else if (!isPasswordValid(password)) {
             // Show a message if the password is not valid
-            JOptionPane.showMessageDialog(null, "Password must be at least 8 characters long and contain upper case letters, lower case letters, and digits.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null,
+                    "Password must be at least 8 characters long and contain upper case letters, lower case letters, and digits.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
         } else {
             // Hash the password
             String hashedPassword = PasswordUtils.hashPassword(password);
@@ -228,7 +230,7 @@ public class SignUpUser extends JFrame implements ActionListener {
                 int rowsInserted = preparedStatement.executeUpdate();
                 if (rowsInserted > 0) {
                     JOptionPane.showMessageDialog(null, "You are signed up successfully");
-                    dispose();  // Dispose of the current window
+                    dispose(); // Dispose of the current window
                     new LogInUser();
                 }
             } catch (SQLException e) {
@@ -240,7 +242,8 @@ public class SignUpUser extends JFrame implements ActionListener {
 
     // Validate password strength
     private boolean isPasswordValid(String password) {
-        // Password should be at least 8 characters long, contain upper and lower case letters, and digits
+        // Password should be at least 8 characters long, contain upper and lower case
+        // letters, and digits
         return password.length() >= 8
                 && password.matches(".*[a-z].*")
                 && password.matches(".*[A-Z].*")
